@@ -1,0 +1,18 @@
+---
+- hosts: all
+  become: yes
+  vars: 
+            - java_ubuntu: openjdk-8-jdk
+            - java_rhel: java-1.8.0-openjdk
+  tasks:
+      - name: install java in ubuntu
+        apt:
+            name: "{{ java_ubuntu }}"
+            state: present
+        when: ansible_os_family == "Debian"
+
+      - name: install java in rhel
+        yum:
+            name: "{{ java_rhel }}"
+            state: present
+        when: ansible_os_family == "RedHat"

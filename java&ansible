@@ -1,0 +1,70 @@
+---
+- name: install java
+  hosts: 35.154.8.230
+  gather_facts: yes
+  become: true
+  tasks:
+     - name: update repo
+       apt:
+            name: "*"
+            state: latest
+     - name: install jdk
+       apt:
+            name: "{{ packages }}"
+            state: present
+       vars:
+            packages:
+                - openjdk-11-jdk
+
+     - name: downloading tomcat
+       get_url:
+        url: "https://dlcdn.apache.org/tomcat/tomcat-10/v10.0.22/bin/apache-tomcat-10.0.22.tar.gz"
+        dest: /usr/local
+     - name: extracting tomcat
+       unarchive:
+           src: "/usr/local/apache-tomcat-10.0.22.tar.gz"
+           dest: /usr/local
+           remote_src: yes
+
+     - name: renameing tomcat home
+       command: mv usr/local/apache-tomcat-10.0.22 /usr/local/tomcat
+     - name: starting tomcat
+       shell: nohup /usr/local/tomcat/bin/startup.sh
+
+     - name: give the ownership to tomcat
+       file:
+         path: /usr/local/tomcat
+         owner: tomcat
+         group: tomcat
+
+     - name: starting tomcat
+       shell: nohup /usr/local/tomcat/bin/shutdown.sh
+
+     - name: starting tomcat
+       shell: nohup /usr/local/tomcat/bin/startup.sh
+
+     - name: demon reload
+       systemd: 
+           name: tomcat
+           daemon_reload: yes
+           enabled: yes
+           state: restarted
+      
+     - name: add roles
+       lineinfile:
+          path: /opt/tomcat/conf/tomcat-users.xml
+          insertbefore: '^</tomcat-users>'
+          line: "{{item}}"
+       with_items:
+          - "{{ <role rolename="admin-gui"/> }}"
+          - "{{ <role rolename="manager-gui"/> }}"
+          - "{{ <user username="admin" password="admin" roles="admin-gui,manager-gui"/> }}"
+
+     - name: enable manager app
+       lineinfile:
+         path: /opt/tomcat/latest/webapps/manager/META-INF/context.xml
+         state: absent
+         regexp: "{{item}}
+       with_items:
+          - "{{ <Valve className="org.apache.catalina.valves.RemoteAddrValve" }}"
+          -  "{{ allow="127\.\d+\.\d+\.\d+|::1|0:0:0:0:0:0:0:1" />" }}"

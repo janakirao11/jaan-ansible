@@ -1,0 +1,20 @@
+---
+- name: download artifact
+  get_url:
+      url: https://github.com/janakirao11/applogin/raw/master/target/applogin-1.2.war
+      dest: /tmp
+
+ - name: copy artifact
+   copy:
+      src: /tmp/applogin-1.2.war
+      dest: /opt/tomcat/webapps/applogin-1.2.war
+      owner: tomcat
+      group: tomcat
+      remote_src: yes
+   notify:
+      - restart tomcat after deploy
+
+  - name: restart tomcat after deploy
+    service:
+      name: tomcat
+      state: restarted    

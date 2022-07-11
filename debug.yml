@@ -1,0 +1,10 @@
+---
+- hosts: all
+  tasks:  
+         - name: register shell output to a variable
+           shell: pwd
+           register: a
+
+         - debug:
+                 msg: "{{ a }}"    
+                

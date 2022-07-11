@@ -1,0 +1,10 @@
+---
+- hosts: all
+  become: true
+  tasks:
+      - name: install package in ubuntu
+        apt: 
+            name: git
+            state: present
+            update_cache: yes
+            

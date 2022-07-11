@@ -1,0 +1,53 @@
+---
+
+- name: add user tomcat
+  shell: sudo useradd -m -U -d /opt/tomcat -s /bin/false tomcat
+  igonre_errors: yes
+
+- name: tomcat install 
+  block:
+    - name: wget the package
+      get_url:
+         url: https://www-eu.apache.org/dist/tomcat/tomcat-9/v{{ VERSION }}/bin/apache-tomcat-{{ VERSION }}.tar.gz -P /tmp
+         dest: /tmp
+    - name: extract the package
+      unarchive:
+          src: /tmp/apache-tomcat-{{ VERSION }}.tar.gz
+          dest: /opt/tomcat
+    - name: create symlink
+      file: 
+        src: /opt/tomcat/apache-tomcat-{{ VERSION }}.tar.gz
+        dest: /opt/tomcat/latest
+        state: link
+  rescue:
+    - name: rescue block
+      debug:
+        msg: this is rescued
+
+- name: give the ownership to tomcat
+  file:
+     path: /opt/tomcat
+     owner: tomcat
+     group: tomcat
+
+- name: list the sh file in bin folder
+  shell: ls /opt/tomcat/latest/bin/*.sh
+  register: list
+
+- name: give the excutable Permission
+  file:
+     path: /opt/tomcat/latest/bin/{{item}}
+  with_items:
+    - lst.stdout_lines
+
+- name: create service file
+  template: 
+       src: templates/tomcat.service.j2
+       dest: /etc/systemd/system/tomcat.service
+
+- name: demon reload
+  systemd: 
+      name: tomcat
+      daemon_reload: yes
+      enabled: yes
+      state: restarted
